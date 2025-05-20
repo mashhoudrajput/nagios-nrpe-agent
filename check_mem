@@ -1,0 +1,18 @@
+#!/bin/sh
+
+MEMINFO=$(grep -E '^(MemTotal|MemFree|Buffers|Cached):' /proc/meminfo)
+eval "$MEMINFO"
+
+let "MemUsed = MemTotal - MemFree - Buffers - Cached"
+let "MemUsedPct = (MemUsed * 100) / MemTotal"
+
+if [ "$MemUsedPct" -ge "$2" ]; then
+    echo "CRITICAL - Memory usage is ${MemUsedPct}% | mem=${MemUsedPct}%"
+    exit 2
+elif [ "$MemUsedPct" -ge "$1" ]; then
+    echo "WARNING - Memory usage is ${MemUsedPct}% | mem=${MemUsedPct}%"
+    exit 1
+else
+    echo "OK - Memory usage is ${MemUsedPct}% | mem=${MemUsedPct}%"
+    exit 0
+fi
