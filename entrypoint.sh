@@ -1,18 +1,7 @@
 #!/bin/bash
 
-set -e
-set -x
-
-# Replace hostname and password in template
-if [ -z "$NRPE_PASSWORD" ]; then
-    echo "NRPE_PASSWORD must be set"
-    exit 1
-fi
-
-sed \
-  -e "s|%%HOSTNAME%%|$HOSTNAME|" \
-  -e "s|%%NRPE_PASSWORD%%|$NRPE_PASSWORD|" \
-  /etc/nagios/nrpe.cfg.template > /etc/nagios/nrpe.cfg
+set -e  # Exit immediately if any command fails
+set -x  # Show what's happening (debug mode)
 
 # Generate TLS certificates if they don't exist
 if [ ! -f /etc/nagios/nrpe.key ]; then
@@ -28,6 +17,10 @@ fi
 # Fix permissions
 chown -R nagios:nagios /etc/nagios /var/run/nrpe /usr/lib/nagios/plugins
 
+# Verify SSL files
+echo "SSL Files:"
+ls -la /etc/nagios/nrpe.*
+
 # Test configuration
 echo "Testing NRPE configuration..."
 /usr/bin/nrpe -c /etc/nagios/nrpe.cfg -d
@@ -36,6 +29,6 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Start NRPE in foreground
+# Start NRPE in foreground (without disabling SSL)
 echo "Starting NRPE agent..."
 exec /usr/bin/nrpe -c /etc/nagios/nrpe.cfg -f

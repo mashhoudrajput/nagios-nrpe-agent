@@ -1,6 +1,6 @@
 FROM alpine:3.15
 
-# Install core packages and plugins
+# Install NRPE + required Nagios plugins
 RUN apk add --no-cache \
     nrpe=4.0.3-r2 \
     nagios-plugins=2.3.3-r1 \
@@ -15,19 +15,23 @@ RUN apk add --no-cache \
     bash=5.1.16-r0 \
     tini=0.19.0-r0
 
-# Create directories
-RUN mkdir -p /etc/nagios /var/run/nrpe /usr/lib/nagios/plugins/custom && \
-    chown -R nagios:nagios /etc/nagios /var/run/nrpe /usr/lib/nagios/plugins
+# Create required directories
+RUN mkdir -p \
+    /usr/lib/nagios/plugins/custom \
+    /var/run/nrpe \
+    /etc/nagios && \
+    chown -R nagios:nagios /usr/lib/nagios/plugins /var/run/nrpe /etc/nagios
 
-# Copy files
-COPY nrpe.cfg.template /etc/nagios/nrpe.cfg.template
+# Copy config and scripts
+COPY nrpe.cfg /etc/nagios/nrpe.cfg
 COPY entrypoint.sh /entrypoint.sh
 COPY healthcheck.sh /healthcheck.sh
 COPY check_mem /usr/lib/nagios/plugins/check_mem
 
 # Set permissions
 RUN chmod +x /entrypoint.sh /healthcheck.sh /usr/lib/nagios/plugins/check_mem && \
-    chmod 644 /etc/nagios/nrpe.cfg.template
+    chmod 644 /etc/nagios/nrpe.cfg && \
+    chown nagios:nagios /etc/nagios/nrpe.cfg
 
 EXPOSE 5666
 
