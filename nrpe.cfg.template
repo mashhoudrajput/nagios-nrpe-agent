@@ -9,7 +9,6 @@ dont_blame_nrpe=1
 debug=0
 command_timeout=60
 
-# Disable all TLS/SSL
 ssl_enable=0
 allow_weak_ssl_ciphers=1
 use_ssl=0
