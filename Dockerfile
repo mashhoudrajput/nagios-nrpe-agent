@@ -14,7 +14,8 @@ RUN apk add --no-cache \
     nagios-plugins \
     openssh \
     bash=5.1.16-r0 \
-    tini=0.19.0-r0
+    tini=0.19.0-r0 \
+    su-exec
 
 # Create required directories and set ownership
 RUN mkdir -p /var/run/nrpe /etc/nagios && \
