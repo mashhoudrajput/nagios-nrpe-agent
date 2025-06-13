@@ -1,34 +1,14 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
-set -e  # Exit immediately if any command fails
-set -x  # Show what's happening (debug mode)
+# Set allowed hosts, fallback to default if not provided
+ALLOWED_HOSTS="${ALLOWED_HOSTS:-52.208.159.63}"
 
-# Generate TLS certificates if they don't exist
-if [ ! -f /etc/nagios/nrpe.key ]; then
-    echo "Generating new TLS certificates..."
-    openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-        -keyout /etc/nagios/nrpe.key \
-        -out /etc/nagios/nrpe.crt \
-        -subj "/CN=${HOSTNAME}"
-    chmod 600 /etc/nagios/nrpe.key
-    chmod 644 /etc/nagios/nrpe.crt
-fi
+# Replace placeholder in the config
+sed -i "s/__ALLOWED_HOSTS__/${ALLOWED_HOSTS}/g" /etc/nagios/nrpe.cfg
 
-# Fix permissions
-chown -R nagios:nagios /etc/nagios /var/run/nrpe /usr/lib/nagios/plugins
+echo "Starting NRPE agent for Nagios server: ${ALLOWED_HOSTS}"
 
-# Verify SSL files
-echo "SSL Files:"
-ls -la /etc/nagios/nrpe.*
+# Start NRPE
+exec /usr/bin/nrpe -f -c /etc/nagios/nrpe.cfg
 
-# Test configuration
-echo "Testing NRPE configuration..."
-/usr/bin/nrpe -c /etc/nagios/nrpe.cfg -d
-if [ $? -ne 0 ]; then
-    echo "ERROR: NRPE configuration test failed"
-    exit 1
-fi
-
-# Start NRPE in foreground (without disabling SSL)
-echo "Starting NRPE agent..."
-exec /usr/bin/nrpe -c /etc/nagios/nrpe.cfg -f
