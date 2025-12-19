@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # MySQL Database (runs on same server as Nagios)
+  mysql:
+    image: mysql:8.0
+    container_name: nagios-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=nagios_root_pass
+      - MYSQL_DATABASE=nagios_db
+      - MYSQL_USER=nagios_user
+      - MYSQL_PASSWORD=nagios_pass
+    volumes:
+      - nagios-mysql-data:/var/lib/mysql
+      - ./nagios-server/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - nagios-network
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nagios Server
+  nagios-server:
+    build:
+      context: ./nagios-server
+      dockerfile: Dockerfile
+    container_name: nagios-server
+    hostname: nagios-server
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+      - "5666:5666"
+    volumes:
+      - nagios-config:/usr/local/nagios/etc
+      - nagios-var:/usr/local/nagios/var
+      - nagios-logs:/var/log/supervisor
+    environment:
+      - NAGIOS_TIMEZONE=UTC
+      - NAGIOSADMIN_USER=nagiosadmin
+      - NAGIOSADMIN_PASS=nagiosadmin
+      # Database configuration - use RDS in production
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_NAME=${DB_NAME:-nagios_db}
+      - DB_USER=${DB_USER:-nagios_user}
+      - DB_PASS=${DB_PASS:-nagios_pass}
+    networks:
+      - nagios-network
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  nagios-network:
+    driver: bridge
+
+volumes:
+  nagios-config:
+    driver: local
+  nagios-var:
+    driver: local
+  nagios-logs:
+    driver: local
+  nagios-mysql-data:
+    driver: local

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nagios Monitor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>Nagios</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span>📊 Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="hosts">
+                    <span>🖥️ Hosts</span>
+                </a>
+                <a href="#" class="nav-item" data-page="services">
+                    <span>⚙️ Services</span>
+                </a>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header class="top-bar">
+                <h2 id="pageTitle">Dashboard</h2>
+                <button class="btn btn-primary" id="refreshBtn">🔄 Refresh</button>
+            </header>
+            
+            <div class="content-area">
+                <!-- Dashboard -->
+                <div id="dashboard-page" class="page active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalHosts">0</div>
+                            <div class="stat-label">Hosts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalServices">0</div>
+                            <div class="stat-label">Services</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="healthyHosts">0</div>
+                            <div class="stat-label">Healthy</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="alerts">0</div>
+                            <div class="stat-label">Alerts</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Recent Activity</h3>
+                        <div id="recentActivity" class="activity-list"></div>
+                    </div>
+                </div>
+                
+                <!-- Hosts Page -->
+                <div id="hosts-page" class="page">
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="addHostBtn">+ Add Host</button>
+                    </div>
+                    <div class="card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Host Name</th>
+                                    <th>IP Address</th>
+                                    <th>Alias</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hostsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Services Page -->
+                <div id="services-page" class="page">
+                    <div class="page-actions">
+                        <button class="btn btn-primary" id="addServiceBtn">+ Add Services</button>
+                    </div>
+                    <div class="card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Host</th>
+                                    <th>Service</th>
+                                    <th>Check Command</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="servicesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Add Host Modal -->
+    <div id="addHostModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Host</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="addHostForm">
+                <div class="form-group">
+                    <label>Host Name *</label>
+                    <input type="text" id="hostName" required placeholder="webserver-01">
+                </div>
+                <div class="form-group">
+                    <label>IP Address *</label>
+                    <input type="text" id="hostIp" required placeholder="192.168.1.100">
+                </div>
+                <div class="form-group">
+                    <label>Alias</label>
+                    <input type="text" id="hostAlias" placeholder="Production Server">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Host</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Add Services Modal with Checkboxes -->
+    <div id="addServiceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Services</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="addServiceForm">
+                <div class="form-group">
+                    <label>Select Host *</label>
+                    <select id="serviceHost" required>
+                        <option value="">Choose a host...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Select Services *</label>
+                    <div class="checkbox-group" id="serviceCheckboxes"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Selected Services</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Host Modal -->
+    <div id="editHostModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Host</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="editHostForm">
+                <input type="hidden" id="editHostName">
+                <div class="form-group">
+                    <label>IP Address *</label>
+                    <input type="text" id="editHostIp" required>
+                </div>
+                <div class="form-group">
+                    <label>Alias</label>
+                    <input type="text" id="editHostAlias">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Edit Service Modal -->
+    <div id="editServiceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Service</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="editServiceForm">
+                <input type="hidden" id="editServiceId">
+                <div class="form-group">
+                    <label>Service Name *</label>
+                    <input type="text" id="editServiceName" required>
+                </div>
+                <div class="form-group">
+                    <label>Check Command *</label>
+                    <select id="editServiceCheckCommand" required></select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="js/app.js"></script>
+</body>
+</html>
